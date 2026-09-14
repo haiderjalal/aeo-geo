@@ -1,7 +1,9 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useState, type CSSProperties, type FormEvent } from "react";
 import ScoreReport from "@/components/ScoreReport";
+import CrawlerView from "@/components/CrawlerView";
+import { BRAND } from "@/lib/brand";
 import type { AnalysisResult } from "@/lib/types";
 
 export default function Home() {
@@ -28,91 +30,123 @@ export default function Home() {
       if (payload.success) setResult(payload.data as AnalysisResult);
       else setError(payload.message ?? "Something went wrong.");
     } catch {
-      setError("Could not reach the analyzer. Check your connection and try again.");
+      setError("Could not reach the scanner. Check your connection and try again.");
     } finally {
       setLoading(false);
     }
   }
 
+  const idle = !result && !loading && !error;
+
   return (
-    <main className="mx-auto w-full max-w-3xl flex-1 px-6 py-16 sm:py-24">
-      <header>
-        <h1 className="text-3xl font-semibold tracking-tight text-zinc-50 sm:text-4xl">
-          AEO / GEO Analyzer
-        </h1>
-        <p className="mt-3 max-w-xl leading-relaxed text-zinc-400">
-          Paste a URL to see how ready that page is to be found, parsed and cited by AI search
-          engines — ChatGPT, Perplexity, Claude, Copilot and Google AI Overviews.
-        </p>
+    <>
+      <header className="mx-auto flex w-full max-w-5xl items-center justify-between px-6 py-6">
+        <div className="flex items-center gap-2.5">
+          <span className="block size-3.5 rounded-[3px] bg-mark" aria-hidden="true" />
+          <span className="font-mono text-sm tracking-tight text-ink">{BRAND.name}</span>
+        </div>
+        <span className="font-mono text-[11px] text-ink-faint">33 checks · free · no account</span>
       </header>
 
-      <form onSubmit={handleSubmit} className="mt-8 flex flex-col gap-3 sm:flex-row">
-        <label htmlFor="url" className="sr-only">
-          Page URL to analyze
-        </label>
-        <input
-          id="url"
-          type="text"
-          inputMode="url"
-          autoComplete="url"
-          value={url}
-          onChange={(e) => setUrl(e.target.value)}
-          placeholder="https://example.com/page"
-          disabled={loading}
-          className="flex-1 rounded-md border border-zinc-700 bg-zinc-900 px-4 py-3 font-mono text-sm text-zinc-100 placeholder:text-zinc-600 focus:border-zinc-500 focus:ring-2 focus:ring-zinc-500 focus:outline-none disabled:opacity-60"
-        />
-        <button
-          type="submit"
-          disabled={loading || !url.trim()}
-          className="rounded-md bg-zinc-100 px-6 py-3 text-sm font-medium text-zinc-900 transition hover:bg-white focus:ring-2 focus:ring-zinc-400 focus:ring-offset-2 focus:ring-offset-zinc-950 focus:outline-none disabled:cursor-not-allowed disabled:opacity-40"
-        >
-          {loading ? "Scanning…" : "Analyze"}
-        </button>
-      </form>
+      <main className="mx-auto w-full max-w-5xl flex-1 px-6 pb-24">
+        {/* ---------- Hero ---------- */}
+        <div className="pt-10 sm:pt-20">
+          <h1 className="display text-[clamp(2.75rem,9vw,7rem)]">
+            <span className="rise block" style={{ "--delay": "0.05s" } as CSSProperties}>
+              Every site has
+            </span>
+            <span className="rise block" style={{ "--delay": "0.15s" } as CSSProperties}>
+              two versions.
+            </span>
+          </h1>
 
-      <p aria-live="polite" className="sr-only">
-        {loading ? "Scanning page, please wait." : result ? "Analysis complete." : ""}
-      </p>
+          <p
+            className="rise mt-7 max-w-2xl text-lg leading-relaxed text-ink-soft"
+            style={{ "--delay": "0.3s" } as CSSProperties}
+          >
+            The one people see, and the one{" "}
+            <span className="mark text-ink" style={{ "--mark-delay": "0.7s" } as CSSProperties}>
+              AI search retrieves
+            </span>
+            . Paste a URL to find out which parts of your page survive the second one.
+          </p>
 
-      {error && (
-        <p
-          role="alert"
-          className="mt-6 rounded-md border border-rose-900/60 bg-rose-950/40 px-4 py-3 text-sm text-rose-200"
-        >
-          {error}
-        </p>
-      )}
+          {/* ---------- Scan form ---------- */}
+          <form
+            onSubmit={handleSubmit}
+            className="rise mt-10 flex flex-col gap-3 sm:flex-row"
+            style={{ "--delay": "0.4s" } as CSSProperties}
+          >
+            <label htmlFor="url" className="sr-only">
+              Page URL to scan
+            </label>
+            <input
+              id="url"
+              type="text"
+              inputMode="url"
+              autoComplete="url"
+              value={url}
+              onChange={(e) => setUrl(e.target.value)}
+              placeholder="https://example.com/page"
+              disabled={loading}
+              className="flex-1 rounded-lg border border-rule-strong bg-paper-raised px-5 py-4 font-mono text-[15px] text-ink transition-colors placeholder:text-ink-faint focus:border-ink focus:outline-none disabled:opacity-60"
+            />
+            <button
+              type="submit"
+              disabled={loading || !url.trim()}
+              className="rounded-lg bg-ink px-8 py-4 text-[15px] font-medium text-paper transition-transform hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:translate-y-0"
+            >
+              {loading ? "Scanning…" : "Scan page"}
+            </button>
+          </form>
 
-      {loading && (
-        <div className="mt-12 space-y-4" aria-hidden="true">
-          <div className="h-24 animate-pulse rounded-md bg-zinc-900" />
-          <div className="h-3 w-2/3 animate-pulse rounded bg-zinc-900" />
-          <div className="h-3 w-1/2 animate-pulse rounded bg-zinc-900" />
-          <div className="h-40 animate-pulse rounded-md bg-zinc-900" />
+          <p aria-live="polite" className="sr-only">
+            {loading ? "Scanning page, please wait." : result ? "Scan complete." : ""}
+          </p>
+
+          {error && (
+            <p
+              role="alert"
+              className="fade mt-6 rounded-lg border-l-4 border-flag bg-flag-soft px-5 py-4 text-sm text-ink"
+            >
+              {error}
+            </p>
+          )}
         </div>
-      )}
 
-      {result && <ScoreReport result={result} />}
+        {/* ---------- Loading skeleton ---------- */}
+        {loading && (
+          <div className="mt-16 space-y-6" aria-hidden="true">
+            <div className="shimmer h-28 w-56 rounded-lg" />
+            <div className="flex h-16 items-end gap-[3px]">
+              {Array.from({ length: 33 }).map((_, i) => (
+                <div
+                  key={i}
+                  className="shimmer flex-1 rounded-sm"
+                  style={{ height: `${30 + ((i * 37) % 60)}%` }}
+                />
+              ))}
+            </div>
+            <div className="shimmer h-2 w-full rounded-full" />
+            <div className="shimmer h-2 w-4/5 rounded-full" />
+          </div>
+        )}
 
-      {!result && !loading && !error && (
-        <section className="mt-16 border-t border-zinc-800 pt-8">
-          <h2 className="text-xs tracking-[0.2em] text-zinc-500 uppercase">What gets checked</h2>
-          <dl className="mt-4 grid gap-x-8 gap-y-4 sm:grid-cols-2">
-            {[
-              ["Crawler & bot access", "Whether AI crawlers are blocked in robots.txt — or silently blocked by your firewall."],
-              ["Content extractability", "Whether the page survives chunking: raw-HTML content, headings, answer blocks, tables."],
-              ["Authority signals", "Statistics, outbound citations, author attribution, freshness, keyword stuffing."],
-              ["Structured data", "JSON-LD presence, validity, and whether the right entity and page types are declared."],
-              ["Machine readability", "llms.txt, semantic HTML, alt text, canonical, markdown for agents."],
-            ].map(([term, desc]) => (
-              <div key={term}>
-                <dt className="text-sm font-medium text-zinc-200">{term}</dt>
-                <dd className="mt-1 text-sm leading-relaxed text-zinc-500">{desc}</dd>
-              </div>
-            ))}
-          </dl>
-        </section>
-      )}
-    </main>
+        {result && <ScoreReport result={result} />}
+
+        {/* ---------- Idle: the thesis, shown ---------- */}
+        {idle && (
+          <div className="rise mt-16 sm:mt-24" style={{ "--delay": "0.55s" } as CSSProperties}>
+            <CrawlerView />
+          </div>
+        )}
+      </main>
+
+      <footer className="mx-auto w-full max-w-5xl border-t border-rule px-6 py-8">
+        <p className="font-mono text-[11px] text-ink-faint">
+          {BRAND.name} · static analysis · nothing is stored
+        </p>
+      </footer>
+    </>
   );
 }

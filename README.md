@@ -1,4 +1,4 @@
-# AEO / GEO Analyzer
+# Citable
 
 Paste a URL, get a 0–100 **AI readiness score** and a prioritized fix list for how that page will be
 crawled, parsed and cited by AI search engines (ChatGPT, Perplexity, Claude, Copilot, Google AI Overviews).
@@ -31,6 +31,32 @@ The weighting reflects the [Princeton/IIT Delhi GEO study](https://dl.acm.org/do
 (KDD 2024), which found citing sources (+40%), statistics (+37%) and quotations (+30%) were the strongest
 levers tested — and that keyword stuffing was the only tactic that actively *reduced* AI visibility (−10%).
 
+## Design
+
+The brand is built on one idea: a highlighter marking a passage for extraction — which is
+literally what an AI engine does to your page when it decides to cite you.
+
+| Token | Value | Role |
+|---|---|---|
+| `paper` | `#F2F3EF` | Cool off-white ground, not warm cream |
+| `ink` | `#12140F` | Near-black with a green undertone to match the paper |
+| `mark` | `#D8FF3C` | The highlighter. Only ever used *behind* ink, never as a text colour |
+| `flag` | `#FF4D22` | Failure only, borrowed from HTTP error semantics |
+
+Type is a three-voice system: **Bricolage Grotesque** for display (set huge and tight),
+**Instrument Sans** for body, and **IBM Plex Mono** as the protocol voice — anything a machine
+wrote: URLs, headers, status codes, check details.
+
+Two signature elements carry the thesis:
+
+- **The Rendered / Retrieved diff** on the idle page — the same mock page twice, aligned row by
+  row, so what the crawler loses reads as a diff rather than an argument.
+- **The spectrum** in the report — one tick per check, drawn in sequence. A healthy page is a calm
+  even barcode; a single orange tick is visible instantly.
+
+Names live in `lib/brand.ts`, so renaming is a one-file change. All motion is gated behind
+`prefers-reduced-motion`.
+
 ## Development
 
 ```bash
@@ -48,8 +74,10 @@ app/
   page.tsx               form + result state (client)
   api/analyze/route.ts   POST { url } -> AnalysisResult; rate limited
 components/
-  ScoreReport.tsx        presentational report
+  ScoreReport.tsx        score, spectrum, category meters, findings
+  CrawlerView.tsx        the Rendered / Retrieved diff
 lib/
+  brand.ts               name and tagline — the only file a rebrand touches
   analyze.ts             orchestration: parallel fetches, scoring, grade, cap
   checks.ts              the ~33 checks, grouped by category
   robots.ts              robots.txt evaluator (group precedence, wildcards, longest-match)

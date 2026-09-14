@@ -1,14 +1,228 @@
 @import "tailwindcss";
 
-@theme inline {
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+/* ============================================================
+   Citable — design tokens
+   Paper, ink, and one highlighter. The accent is only ever used
+   the way a real highlighter is: behind ink, marking a passage.
+   ============================================================ */
+
+@theme {
+  --color-paper: #f2f3ef;
+  --color-paper-raised: #fbfbf9;
+  --color-ink: #12140f;
+  --color-ink-soft: #5b6057;
+  --color-ink-faint: #8d9187;
+  --color-rule: #d9dcd3;
+  --color-rule-strong: #c2c6ba;
+
+  /* The brand mark. Highlighter, not neon: always behind ink. */
+  --color-mark: #d8ff3c;
+  --color-mark-deep: #b4dd10;
+
+  /* Reserved for failure only, borrowed from HTTP error semantics. */
+  --color-flag: #ff4d22;
+  --color-flag-soft: #ffe7e0;
+
+  --font-display: var(--font-bricolage), "Arial Black", sans-serif;
+  --font-sans: var(--font-instrument), system-ui, sans-serif;
+  --font-mono: var(--font-plex-mono), ui-monospace, monospace;
+
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 :root {
-  color-scheme: dark;
+  color-scheme: light;
+}
+
+html {
+  scroll-behavior: smooth;
 }
 
 body {
-  font-family: var(--font-geist-sans), system-ui, sans-serif;
+  background: var(--color-paper);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* The product is about passages being selected. Make selection the brand. */
+::selection {
+  background: var(--color-mark);
+  color: var(--color-ink);
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-ink);
+  outline-offset: 3px;
+}
+
+/* ------------------------------------------------------------
+   Display type: tight, mechanical, set large.
+   ------------------------------------------------------------ */
+.display {
+  font-family: var(--font-display);
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  line-height: 0.92;
+  text-wrap: balance;
+}
+
+.eyebrow {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--color-ink-faint);
+}
+
+/* ------------------------------------------------------------
+   The highlighter mark. Sweeps in from the left on reveal.
+   ------------------------------------------------------------ */
+.mark {
+  position: relative;
+  display: inline-block;
+  isolation: isolate;
+}
+
+.mark::before {
+  content: "";
+  position: absolute;
+  inset: 0.08em -0.12em 0.1em;
+  z-index: -1;
+  background: var(--color-mark);
+  transform: scaleX(0);
+  transform-origin: left center;
+  animation: mark-sweep 0.7s var(--ease-out-expo) forwards;
+  animation-delay: var(--mark-delay, 0.5s);
+}
+
+@keyframes mark-sweep {
+  to {
+    transform: scaleX(1);
+  }
+}
+
+/* ------------------------------------------------------------
+   Entrance motion
+   ------------------------------------------------------------ */
+.rise {
+  opacity: 0;
+  animation: rise 0.75s var(--ease-out-expo) forwards;
+  animation-delay: var(--delay, 0s);
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.fade {
+  opacity: 0;
+  animation: fade 0.6s ease forwards;
+  animation-delay: var(--delay, 0s);
+}
+
+@keyframes fade {
+  to {
+    opacity: 1;
+  }
+}
+
+/* Category meters fill to a width set inline as --w. */
+.meter-fill {
+  width: 0;
+  animation: meter 1.1s var(--ease-out-expo) forwards;
+  animation-delay: var(--delay, 0s);
+}
+
+@keyframes meter {
+  to {
+    width: var(--w);
+  }
+}
+
+/* Spectrum ticks pop in sequentially — the page's fingerprint drawing itself. */
+.tick {
+  transform: scaleY(0.15);
+  opacity: 0;
+  transform-origin: bottom;
+  animation: tick 0.45s var(--ease-out-expo) forwards;
+  animation-delay: var(--delay, 0s);
+}
+
+@keyframes tick {
+  to {
+    transform: scaleY(1);
+    opacity: 1;
+  }
+}
+
+/* The crawler-view diptych wipes from styled to stripped. */
+@keyframes strip {
+  0%,
+  45% {
+    clip-path: inset(0 0 0 0);
+  }
+  55%,
+  100% {
+    clip-path: inset(0 0 0 100%);
+  }
+}
+
+.shimmer {
+  background: linear-gradient(
+    90deg,
+    var(--color-rule) 25%,
+    var(--color-rule-strong) 37%,
+    var(--color-rule) 63%
+  );
+  background-size: 400% 100%;
+  animation: shimmer 1.4s ease infinite;
+}
+
+@keyframes shimmer {
+  from {
+    background-position: 100% 0;
+  }
+  to {
+    background-position: -100% 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  .rise,
+  .fade,
+  .tick,
+  .meter-fill,
+  .mark::before,
+  .shimmer {
+    animation-duration: 0.01ms !important;
+    animation-delay: 0ms !important;
+    animation-iteration-count: 1 !important;
+  }
+
+  .rise,
+  .fade,
+  .tick {
+    opacity: 1;
+    transform: none;
+  }
+
+  .meter-fill {
+    width: var(--w);
+  }
+
+  .mark::before {
+    transform: scaleX(1);
+  }
 }
