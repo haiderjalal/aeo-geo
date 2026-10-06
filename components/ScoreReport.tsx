@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, type CSSProperties } from "react";
+import FixPrompt from "@/components/FixPrompt";
 import type { AnalysisResult, Check, CheckStatus } from "@/lib/types";
 
 /** Status is expressed by weight and one flag colour, never by a rainbow. */
@@ -216,6 +217,8 @@ export default function ScoreReport({ result }: { result: AnalysisResult }) {
           );
         })}
       </div>
+
+      <FixPrompt result={result} />
 
       <p className="mt-16 border-t border-rule pt-6 text-sm leading-relaxed text-ink-soft">
         This scores <span className="text-ink">AI readiness</span> — the signals you control on your
