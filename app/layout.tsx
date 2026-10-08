@@ -54,7 +54,10 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
               url: SITE_URL,
               applicationCategory: "DeveloperApplication",
               description: BRAND.description,
-              offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
+              offers: [
+                { "@type": "Offer", name: "First page scan per browser", price: "0", priceCurrency: "USD" },
+                { "@type": "Offer", name: "Additional AEO and GEO scan with WhatsApp report", price: "10", priceCurrency: "USD" },
+              ],
             }),
           }}
         />

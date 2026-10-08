@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, type CSSProperties, type FormEvent } from "react";
+import { useEffect, useState, type CSSProperties, type FormEvent } from "react";
+import PaidScanRequest from "@/components/PaidScanRequest";
 import ScoreReport from "@/components/ScoreReport";
 import CrawlerView from "@/components/CrawlerView";
 import { BRAND } from "@/lib/brand";
@@ -11,10 +12,25 @@ export default function Home() {
   const [result, setResult] = useState<AnalysisResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [freeScanAvailable, setFreeScanAvailable] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    fetch("/api/scan-access", { cache: "no-store" })
+      .then(async (response) => {
+        const payload = await response.json();
+        if (!response.ok) throw new Error(payload.message);
+        setFreeScanAvailable(payload.freeScanAvailable);
+      })
+      .catch(() => setError("Could not check your free scan. Please reload the page and try again."));
+  }, []);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>): Promise<void> {
     event.preventDefault();
-    if (!url.trim() || loading) return;
+    if (!url.trim() || loading || freeScanAvailable === null) return;
+    if (!freeScanAvailable) {
+      document.getElementById("paid-scan")?.scrollIntoView({ behavior: "smooth", block: "start" });
+      return;
+    }
 
     setLoading(true);
     setError(null);
@@ -27,7 +43,15 @@ export default function Home() {
         body: JSON.stringify({ url }),
       });
       const payload = await response.json();
-      if (payload.success) setResult(payload.data as AnalysisResult);
+      if (payload.success) {
+        setResult(payload.data as AnalysisResult);
+        setFreeScanAvailable(false);
+      }
+      else if (payload.paymentRequired) {
+        setFreeScanAvailable(false);
+        setError(payload.message);
+        document.getElementById("paid-scan")?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
       else setError(payload.message ?? "Something went wrong.");
     } catch {
       setError("Could not reach the scanner. Check your connection and try again.");
@@ -45,7 +69,7 @@ export default function Home() {
           <span className="block size-3.5 rounded-[3px] bg-mark" aria-hidden="true" />
           <span className="font-mono text-sm tracking-tight text-ink">{BRAND.name}</span>
         </div>
-        <span className="font-mono text-[11px] text-ink-faint">33 checks · free · no account</span>
+        <span className="font-mono text-[11px] text-ink-faint">33 checks · first scan free · then $10</span>
       </header>
 
       <main className="mx-auto w-full max-w-5xl flex-1 px-6 pb-24">
@@ -93,12 +117,13 @@ export default function Home() {
             />
             <button
               type="submit"
-              disabled={loading || !url.trim()}
+              disabled={loading || !url.trim() || freeScanAvailable === null}
               className="rounded-lg bg-ink px-8 py-4 text-[15px] font-medium text-paper transition-transform hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:translate-y-0"
             >
-              {loading ? "Scanning…" : "Scan page"}
+              {loading ? "Scanning…" : freeScanAvailable === null ? "Checking access…" : freeScanAvailable ? "Scan for free" : "Request $10 scan"}
             </button>
           </form>
+          <p className="mt-3 text-sm text-ink-soft">{freeScanAvailable === false ? "Your free scan has been used. Request another AEO + GEO scan for $10 USD below." : "One free page scan per browser. Additional scans cost $10 USD, with reports sent to WhatsApp after payment verification."}</p>
 
           <p aria-live="polite" className="sr-only">
             {loading ? "Scanning page, please wait." : result ? "Scan complete." : ""}
@@ -133,6 +158,7 @@ export default function Home() {
         )}
 
         {result && <ScoreReport result={result} />}
+        <PaidScanRequest website={url} />
 
         {/* ---------- Idle: the thesis, shown ---------- */}
         {idle && (
@@ -144,7 +170,7 @@ export default function Home() {
 
       <footer className="mx-auto w-full max-w-5xl border-t border-rule px-6 py-8">
         <p className="font-mono text-[11px] text-ink-faint">
-          {BRAND.name} · static analysis · nothing is stored
+          {BRAND.name} · AEO + GEO readiness · scan allowance stored with an essential browser cookie
         </p>
       </footer>
     </>

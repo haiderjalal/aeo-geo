@@ -6,7 +6,7 @@ crawled, parsed and cited by AI search engines (ChatGPT, Perplexity, Claude, Cop
 ## What it measures — and what it deliberately does not
 
 This scores **AI readiness**: the signals a site owner controls on their own page. It is deterministic,
-free, and every finding is traceable to something observed in the response.
+and every finding is traceable to something observed in the response. The first page scan per browser is free; additional scans cost $10 USD with manual WhatsApp report delivery.
 
 It does **not** measure AI *visibility* — whether you are actually cited in ChatGPT or AI Overviews.
 That depends on domain authority, third-party consensus (reviews, Reddit, Wikipedia, analysts) and live
@@ -90,4 +90,14 @@ lib/
 - **SSRF**: every user-supplied URL is resolved and checked against loopback / link-local / RFC1918
   ranges before any request, and re-checked after redirects.
 - **Rate limiting** is in-memory and per-instance. Move to Redis/Vercel KV before running multi-instance.
-- Nothing is persisted. There is no database.
+- Free scan allowances are persisted in SQLite and linked to signed, HttpOnly browser cookies. Failed scans do not consume the allowance; concurrent scans cannot spend it twice.
+
+## Payments and report requests
+
+Customers pay $10 USD using the provided Wise payment link for `@haiderj23`, then prepare an email to `haiderjalal@musme.co` or a WhatsApp message to `+92 3438067821` with their website, email, WhatsApp number (including country code), and Wise transfer reference. The buttons open the selected app; customers attach their receipt or payment screenshot and send it themselves. They can also use the direct WhatsApp contact link to send requests or payment proof without completing the form. The site does not claim that a message has been sent.
+
+Verify the recipient and $10 USD receipt in Wise before scanning the requested page and sending its report manually over WhatsApp. The payment link does not automatically verify payment or unlock the public scanner. Pricing, recipient, payment link, and inbox are configured in `lib/payments.ts`. Ensure the Wise payment request accepts repeat customer payments and the expected USD amount before launch.
+
+The scanner uses Node.js SQLite (Node 22.13+ or 24+). Set `SCAN_DATA_DIR` to a persistent writable directory on a single Node server; it defaults to `.scan-data`. Back up the database and cookie secret together. Ephemeral/serverless deployment and multiple independent instances need a shared persistent database before launch. Browser identity is anonymous: clearing cookies or using another browser allows a new free scan. Strict one-free-scan-per-person enforcement requires verified accounts.
+
+Page reports are not stored. Only visitor identifiers, allowance usage, and temporary scan reservations are persisted. Paid report details are sent through the customer's email app or WhatsApp and are handled by your team.

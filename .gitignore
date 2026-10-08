@@ -19,6 +19,7 @@
 
 # production
 /build
+/.scan-data/
 
 # misc
 .DS_Store
