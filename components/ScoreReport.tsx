@@ -2,7 +2,8 @@
 
 import { useEffect, useRef, useState, type CSSProperties } from "react";
 import FixPrompt from "@/components/FixPrompt";
-import type { AnalysisResult, Check, CheckStatus } from "@/lib/types";
+import LeaderboardNotice from "@/components/LeaderboardNotice";
+import type { AnalysisResult, Check, CheckStatus, LeaderboardPlacement } from "@/lib/types";
 
 /** Status is expressed by weight and one flag colour, never by a rainbow. */
 const TICK: Record<CheckStatus, { h: string; bg: string }> = {
@@ -87,7 +88,13 @@ function Finding({ check, index }: { check: Check; index: number }) {
   );
 }
 
-export default function ScoreReport({ result }: { result: AnalysisResult }) {
+interface ScoreReportProps {
+  result: AnalysisResult;
+  /** Where the scan landed on the public leaderboard; absent when it was not listed. */
+  placement?: LeaderboardPlacement | null;
+}
+
+export default function ScoreReport({ result, placement }: ScoreReportProps) {
   const score = useCountUp(result.score);
   const attention = result.checks.filter((c) => c.status === "fail" || c.status === "warn").length;
 
@@ -172,6 +179,8 @@ export default function ScoreReport({ result }: { result: AnalysisResult }) {
           {result.cappedReason}
         </p>
       )}
+
+      {placement && <LeaderboardNotice placement={placement} />}
 
       {/* ---------- Category meters ---------- */}
       <div className="mt-14 space-y-6">

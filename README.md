@@ -72,13 +72,17 @@ npm run build
 ```
 app/
   page.tsx               form + result state (client)
-  api/analyze/route.ts   POST { url } -> AnalysisResult; rate limited
+  leaderboard/page.tsx   public leaderboard (server component, paginated)
+  api/analyze/route.ts   POST { url } -> AnalysisResult + leaderboard placement; rate limited
 components/
   ScoreReport.tsx        score, spectrum, category meters, findings
   CrawlerView.tsx        the Rendered / Retrieved diff
+  SiteHeader.tsx         shared header and navigation
+  LeaderboardNotice.tsx  "ranked #N" callout shown after a scan
 lib/
   brand.ts               name and tagline — the only file a rebrand touches
   analyze.ts             orchestration: parallel fetches, scoring, grade, cap
+  leaderboard.ts         ranking rules and SQLite persistence for the leaderboard
   checks.ts              the ~33 checks, grouped by category
   robots.ts              robots.txt evaluator (group precedence, wildcards, longest-match)
   fetch.ts               fetching with SSRF guards, timeouts, size cap, bot-UA probe
@@ -92,6 +96,34 @@ lib/
 - **Rate limiting** is in-memory and per-instance. Move to Redis/Vercel KV before running multi-instance.
 - Free scan allowances are persisted in SQLite and linked to signed, HttpOnly browser cookies. Failed scans do not consume the allowance; concurrent scans cannot spend it twice.
 
+## Leaderboard
+
+Every successful scan from the public scanner is listed on `/leaderboard`, ranked by score. The scan form
+tells visitors this before they scan. Only the **hostname, best score, grade, scan count and timestamps**
+are stored and shown. Reports are never published, and hostnames are plain text, not links.
+
+Rules (all in `lib/leaderboard.ts`, covered by `lib/leaderboard.test.ts`):
+
+- **One row per site.** The key is the lower-case hostname without `www.`, so `example.com` and
+  `www.example.com` are one site. Real subdomains (`blog.example.com`) are separate sites. Scans are keyed
+  on the final URL after redirects.
+- **Best score wins.** A worse rescan only increments the scan count. Ties go to whoever reached the score first.
+- **Eligibility.** The scanned page must return HTTP 200, and the host must be a domain name (IP addresses
+  are never listed). Paid reports are delivered manually and are not recorded here.
+- **Failure-safe.** A leaderboard write error is logged and never fails or un-consumes the scan.
+
+**Removing a site.** Anyone can scan any public URL, so the board needs a takedown path. The page footer
+points requests to the inbox in `lib/payments.ts`. To act on one, hide the row (do not delete it, or a
+rescan would list the site again) with any SQLite client against `.scan-data/scans.sqlite`:
+
+```sql
+UPDATE leaderboard SET hidden = 1 WHERE host = 'example.com';
+```
+
+Hidden sites disappear from the board and from everyone's rank, and stay hidden when rescanned. Set
+`hidden = 0` to restore one. The table is created automatically in the same database file as the free-scan
+allowance, so it has the same deployment constraint described below.
+
 ## Payments and report requests
 
 Customers pay $10 USD using the provided Wise payment link for `@haiderj23`, then prepare an email to `haiderjalal@musme.co` or a WhatsApp message to `+92 3438067821` with their website, email, WhatsApp number (including country code), and Wise transfer reference. The buttons open the selected app; customers attach their receipt or payment screenshot and send it themselves. They can also use the direct WhatsApp contact link to send requests or payment proof without completing the form. The site does not claim that a message has been sent.
@@ -100,4 +132,4 @@ Verify the recipient and $10 USD receipt in Wise before scanning the requested p
 
 The scanner uses Node.js SQLite (Node 22.13+ or 24+). Set `SCAN_DATA_DIR` to a persistent writable directory on a single Node server; it defaults to `.scan-data`. Back up the database and cookie secret together. Ephemeral/serverless deployment and multiple independent instances need a shared persistent database before launch. Browser identity is anonymous: clearing cookies or using another browser allows a new free scan. Strict one-free-scan-per-person enforcement requires verified accounts.
 
-Page reports are not stored. Only visitor identifiers, allowance usage, and temporary scan reservations are persisted. Paid report details are sent through the customer's email app or WhatsApp and are handled by your team.
+Page reports are not stored. Persisted data is limited to visitor identifiers, allowance usage, temporary scan reservations, and the public leaderboard entries described above (hostname, best score, grade, scan count, timestamps). Paid report details are sent through the customer's email app or WhatsApp and are handled by your team.

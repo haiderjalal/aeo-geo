@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { analyze } from "@/lib/analyze";
+import { recordScan } from "@/lib/leaderboard";
 import { finishFreeScan, hasFreeScan, reserveFreeScan, visitorId, VISITOR_COOKIE } from "@/lib/scanAccess";
+import type { AnalysisResult, LeaderboardPlacement } from "@/lib/types";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -19,6 +21,16 @@ function rateLimited(ip: string): boolean {
   hits.set(ip, recent);
   if (hits.size > 5000) hits.clear();
   return recent.length > MAX_PER_WINDOW;
+}
+
+/** The leaderboard is a bonus: it must never fail, or un-consume, a scan that already succeeded. */
+function listOnLeaderboard(data: AnalysisResult): LeaderboardPlacement | null {
+  try {
+    return recordScan(data);
+  } catch (error) {
+    console.error("leaderboard update failed", { error });
+    return null;
+  }
 }
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
@@ -61,7 +73,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
     const data = await analyze(url);
     finishFreeScan(visitor, true);
-    return NextResponse.json({ success: true, data });
+    return NextResponse.json({ success: true, data, leaderboard: listOnLeaderboard(data) });
   } catch (error) {
     finishFreeScan(visitor, false);
     // Surface only the messages we author; never leak fetch internals.

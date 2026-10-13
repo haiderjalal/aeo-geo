@@ -1,15 +1,18 @@
 "use client";
 
 import { useEffect, useState, type CSSProperties, type FormEvent } from "react";
+import Link from "next/link";
 import PaidScanRequest from "@/components/PaidScanRequest";
 import ScoreReport from "@/components/ScoreReport";
 import CrawlerView from "@/components/CrawlerView";
+import SiteHeader from "@/components/SiteHeader";
 import { BRAND } from "@/lib/brand";
-import type { AnalysisResult } from "@/lib/types";
+import type { AnalysisResult, LeaderboardPlacement } from "@/lib/types";
 
 export default function Home() {
   const [url, setUrl] = useState("");
   const [result, setResult] = useState<AnalysisResult | null>(null);
+  const [placement, setPlacement] = useState<LeaderboardPlacement | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [freeScanAvailable, setFreeScanAvailable] = useState<boolean | null>(null);
@@ -35,6 +38,7 @@ export default function Home() {
     setLoading(true);
     setError(null);
     setResult(null);
+    setPlacement(null);
 
     try {
       const response = await fetch("/api/analyze", {
@@ -45,6 +49,7 @@ export default function Home() {
       const payload = await response.json();
       if (payload.success) {
         setResult(payload.data as AnalysisResult);
+        setPlacement((payload.leaderboard as LeaderboardPlacement | null) ?? null);
         setFreeScanAvailable(false);
       }
       else if (payload.paymentRequired) {
@@ -64,13 +69,7 @@ export default function Home() {
 
   return (
     <>
-      <header className="mx-auto flex w-full max-w-5xl items-center justify-between px-6 py-6">
-        <div className="flex items-center gap-2.5">
-          <span className="block size-3.5 rounded-[3px] bg-mark" aria-hidden="true" />
-          <span className="font-mono text-sm tracking-tight text-ink">{BRAND.name}</span>
-        </div>
-        <span className="font-mono text-[11px] text-ink-faint">33 checks · first scan free · then $10</span>
-      </header>
+      <SiteHeader current="home" />
 
       <main className="mx-auto w-full max-w-5xl flex-1 px-6 pb-24">
         {/* ---------- Hero ---------- */}
@@ -125,6 +124,14 @@ export default function Home() {
           </form>
           <p className="mt-3 text-sm text-ink-soft">{freeScanAvailable === false ? "Your free scan has been used. Request another AEO + GEO scan for $10 USD below." : "One free page scan per browser. Additional scans cost $10 USD, with reports sent to WhatsApp after payment verification."}</p>
 
+          <p className="mt-1.5 text-sm text-ink-soft">
+            Scanned sites are ranked on the public{" "}
+            <Link href="/leaderboard" className="text-ink underline underline-offset-4">
+              leaderboard
+            </Link>{" "}
+            by hostname, score and grade. Reports are never published.
+          </p>
+
           <p aria-live="polite" className="sr-only">
             {loading ? "Scanning page, please wait." : result ? "Scan complete." : ""}
           </p>
@@ -157,7 +164,7 @@ export default function Home() {
           </div>
         )}
 
-        {result && <ScoreReport result={result} />}
+        {result && <ScoreReport result={result} placement={placement} />}
         <PaidScanRequest website={url} />
 
         {/* ---------- Idle: the thesis, shown ---------- */}
