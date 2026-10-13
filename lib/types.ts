@@ -43,6 +43,42 @@ export interface AnalysisResult {
   checks: Check[];
 }
 
+export type Grade = AnalysisResult["grade"];
+
+/** One site's standing on the public leaderboard. */
+export interface LeaderboardEntry {
+  /** 1-based position across the whole board, not just this page. */
+  rank: number;
+  host: string;
+  /** The site's best score so far. */
+  score: number;
+  grade: Grade;
+  /** How many times the site has been scanned. */
+  scans: number;
+  /** When the listed score was reached (ISO 8601, UTC). */
+  scoredAt: string;
+}
+
+export interface LeaderboardPage {
+  entries: LeaderboardEntry[];
+  total: number;
+  page: number;
+  pages: number;
+  pageSize: number;
+}
+
+/** Where a just-finished scan landed on the leaderboard. */
+export interface LeaderboardPlacement {
+  host: string;
+  rank: number;
+  total: number;
+  /** The score the board holds for this host. */
+  score: number;
+  grade: Grade;
+  /** False when the host already held a higher score, so this scan did not change the board. */
+  improved: boolean;
+}
+
 export const CATEGORY_META: Record<Category, { label: string; weight: number }> = {
   access: { label: "Crawler & Bot Access", weight: 25 },
   extractability: { label: "Content Extractability", weight: 25 },

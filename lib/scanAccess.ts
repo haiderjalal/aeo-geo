@@ -7,7 +7,8 @@ export const VISITOR_COOKIE = "citable_visitor";
 let database: DatabaseSync | undefined;
 let secret: string;
 
-function db() {
+/** Shared SQLite connection; the leaderboard stores its table in the same database file. */
+export function db() {
   if (database) return database;
   // Runtime data lives on a persistent volume and must not be bundled by Next.js.
   const directory = resolve(/* turbopackIgnore: true */ process.env.SCAN_DATA_DIR ?? ".scan-data");
